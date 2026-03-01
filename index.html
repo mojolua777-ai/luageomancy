@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>地占签语</title>
+    <style>
+        :root { 
+            --sand-light: #f4f1ea; 
+            --sand-dust: #b4b4b4; 
+            --stone-black: #111;    
+            --ui-pale: rgba(0, 0, 0, 0.08); 
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
+        body, html { 
+            margin: 0; padding: 0; height: 100%; 
+            background: var(--sand-light); 
+            color: #222; 
+            font-family: "PingFang SC", "Helvetica Neue", sans-serif; 
+            font-weight: 200;
+            overflow: hidden; 
+        }
+
+        #sand-canvas { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; 
+        }
+
+        .app { 
+            position: relative; z-index: 10; height: 100%; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            padding: 20px; 
+            background: radial-gradient(circle, rgba(244,241,234,0) 0%, rgba(244,241,234,0.8) 100%);
+        }
+        
+        h1 { 
+            font-size: 1.8rem; letter-spacing: 15px; margin: 0; 
+            font-weight: 100; color: #000; text-indent: 15px;
+        }
+        
+        .sub-title { 
+            font-size: 0.65rem; color: #999; margin: 10px 0 40px 0; 
+            letter-spacing: 8px; font-weight: 300; 
+        }
+
+        .geomancy-figure { display: flex; flex-direction: column; gap: 24px; margin-bottom: 40px; align-items: center; width: 120px; }
+        .dot-row { position: relative; width: 100%; height: 18px; display: flex; justify-content: center; align-items: center; }
+        
+        .dot { 
+            position: absolute; width: 18px; height: 18px; 
+            background: var(--stone-black); 
+            border-radius: 50%; 
+            opacity: 0;
+            box-shadow: 1px 2px 8px rgba(0,0,0,0.2); 
+            transition: all 0.6s cubic-bezier(0.2, 1, 0.3, 1);
+            transform: scale(0.4); 
+        }
+
+        .dot.active { opacity: 1; transform: scale(1); }
+        .dot.single { left: 50%; transform: translate(-50%, 0) scale(0.4); }
+        .dot.single.active { transform: translate(-50%, 0) scale(1); }
+        .dot.pair-left { left: 15%; }
+        .dot.pair-right { right: 15%; }
+
+        .result-panel { 
+            text-align: center; opacity: 0; transform: translateY(15px); 
+            transition: 0.8s ease; 
+            max-width: 320px; 
+        }
+        .result-panel.show { opacity: 1; transform: translateY(0); }
+        
+        .res-header { margin-bottom: 15px; }
+        .figure-name { font-size: 1.5rem; color: #000; font-weight: 300; letter-spacing: 5px; }
+        .figure-tag { font-size: 0.75rem; color: #888; margin-left: 8px; vertical-align: middle;}
+        
+        .figure-main { 
+            font-size: 0.95rem; color: #333; margin-bottom: 12px; 
+            font-weight: 400; letter-spacing: 2px;
+            padding-top: 15px; border-top: 1px solid var(--ui-pale);
+        }
+        .figure-meaning { font-size: 0.85rem; line-height: 1.8; color: #777; }
+
+        .btn-draw { 
+            margin-top: 40px; background: rgba(255,255,255,0.4);
+            border: 1px solid var(--ui-pale); color: #444; 
+            padding: 8px 30px; 
+            border-radius: 20px; 
+            font-size: 0.8rem; cursor: pointer; 
+            transition: 0.4s; letter-spacing: 4px;
+            text-indent: 4px;
+            backdrop-filter: blur(5px);
+        }
+        .btn-draw:active { background: var(--ui-pale); transform: scale(0.95); }
+
+        .footer { 
+            position: fixed; bottom: 25px; width: 100%; text-align: center; 
+            font-size: 0.6rem; color: #bbb; letter-spacing: 1px; line-height: 1.8;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="sand-canvas"></canvas>
+    
+    <div class="app">
+        <h1>地占签语</h1>
+        <div class="sub-title">GEOMANCY</div>
+
+        <div id="figure" class="geomancy-figure">
+            <div class="dot-row" id="row-0"><div class="dot single"></div><div class="dot pair-left"></div><div class="dot pair-right"></div></div>
+            <div class="dot-row" id="row-1"><div class="dot single"></div><div class="dot pair-left"></div><div class="dot pair-right"></div></div>
+            <div class="dot-row" id="row-2"><div class="dot single"></div><div class="dot pair-left"></div><div class="dot pair-right"></div></div>
+            <div class="dot-row" id="row-3"><div class="dot single"></div><div class="dot pair-left"></div><div class="dot pair-right"></div></div>
+        </div>
+
+        <div id="resPanel" class="result-panel">
+            <div class="res-header">
+                <span id="resName" class="figure-name"></span>
+                <span id="resTag" class="figure-tag"></span>
+            </div>
+            <div id="resMain" class="figure-main"></div>
+            <div id="resDesc" class="figure-meaning"></div>
+        </div>
+
+        <button class="btn-draw" onclick="generate()">拨沙寻迹</button>
+    </div>
+
+    <div class="footer">
+        · 该网站由LUA基于地占术设计 ·<br>
+        · 请勿商用 仅供娱乐 请勿迷信 ·
+    </div>
+
+<script>
+    const FIGURES = [
+        { name: "大吉", tag: "【吉】", main: "此路须强 终得佳果", desc: "这条路需要努力和成长，最终会得到好的结果", dots: [2,2,1,1] },
+        { name: "小吉", tag: "【吉】", main: "无为亦成 垂拱难久", desc: "不作为也能成功，只是成功难以长久或受制于人", dots: [1,1,2,2] },
+        { name: "获得", tag: "【吉】", main: "盛宴饕餮 载满而归", desc: "获得利益，特别是物质利益", dots: [2,1,2,1] },
+        { name: "失去", tag: "【凶】", main: "夺物之苦 席散无还", desc: "失去事物，或者与人分别", dots: [1,2,1,2] },
+        { name: "结合", tag: "【中】", main: "集结号角 联结之回", desc: "与人合作，召集同党", dots: [2,1,1,2] },
+        { name: "限制", tag: "【凶】", main: "束牢之限 障似山峦", desc: "被束缚和限制，阻碍如山一般", dots: [1,2,2,1] },
+        { name: "白色", tag: "【弱吉】", main: "圣杯智识 静坐长者", desc: "三思而后行，如长者一般和谐平静", dots: [2,2,1,2] },
+        { name: "红色", tag: "【凶】", main: "杯逆时刻 欲魔见矣", desc: "危险将至但是短暂，或是纵欲的体现", dots: [2,1,2,2] }, // 已修正
+        { name: "男子", tag: "【弱凶】", main: "振翅相敌 力足有余", desc: "力量充沛，但是容易鲁莽或起冲突", dots: [1,1,2,1] },
+        { name: "女子", tag: "【弱吉】", main: "宁芙仙子 玉人易碎", desc: "美好但短暂、脆弱", dots: [1,2,1,1] }, // 已修正
+        { name: "快乐", tag: "【吉】", main: "喜则一时 振奋依旧", desc: "获得短暂快乐，但是依旧让人振奋", dots: [1,2,2,2] },
+        { name: "悲伤", tag: "【凶】", main: "恸哭之魔 不宁心神", desc: "悲伤哭泣，不安宁的精神状态", dots: [2,2,2,1] },
+        { name: "龙首", tag: "【中】", main: "万物之始 无尽之首", desc: "事情的开始", dots: [2,1,1,1] },
+        { name: "龙尾", tag: "【中】", main: "入寂入灭 有始必终", desc: "事情的结束", dots: [1,1,1,2] },
+        { name: "道路", tag: "【中】", main: "万物无常 风息雷鸣", desc: "事态容易变动，难有定数", dots: [1,1,1,1] },
+        { name: "群众", tag: "【中】", main: "群羊无首 死水之湖", desc: "无奈又迷茫的状态，就像难以流动的湖水", dots: [2,2,2,2] }
+    ];
+
+    function generate() {
+        const resPanel = document.getElementById('resPanel');
+        resPanel.classList.remove('show');
+        document.querySelectorAll('.dot').forEach(d => d.classList.remove('active'));
+
+        const result = FIGURES[Math.floor(Math.random() * FIGURES.length)];
+
+        setTimeout(() => {
+            result.dots.forEach((count, i) => {
+                const row = document.getElementById(`row-${i}`);
+                if (count === 1) {
+                    row.querySelector('.single').classList.add('active');
+                } else {
+                    row.querySelector('.pair-left').classList.add('active');
+                    row.querySelector('.pair-right').classList.add('active');
+                }
+            });
+
+            document.getElementById('resName').innerText = result.name;
+            document.getElementById('resTag').innerText = result.tag;
+            document.getElementById('resMain').innerText = result.main;
+            document.getElementById('resDesc').innerText = result.desc;
+            resPanel.classList.add('show');
+            if(window.navigator.vibrate) window.navigator.vibrate(20);
+        }, 500);
+    }
+
+    const canvas = document.getElementById('sand-canvas'), ctx = canvas.getContext('2d');
+    let particles = [];
+    let centerX, centerY;
+    
+    function initSand() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        centerX = canvas.width / 2;
+        centerY = canvas.height / 2;
+        particles = [];
+        const count = 500; 
+        for(let i=0; i<count; i++) {
+            const dist = Math.random() * Math.max(canvas.width, canvas.height) * 0.8;
+            particles.push({
+                angle: Math.random() * Math.PI * 2,
+                dist: dist,
+                size: Math.random() * 2 + 1,
+                speed: (Math.random() * 0.002 + 0.0005) * (1 - dist / (canvas.width * 1.5)),
+                alpha: Math.random() * 0.3 + 0.1
+            });
+        }
+    }
+
+    function animateSand() {
+        ctx.fillStyle = 'rgba(244, 241, 234, 0.15)'; 
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        particles.forEach(p => {
+            p.angle += p.speed;
+            const x = centerX + Math.cos(p.angle) * p.dist;
+            const y = centerY + Math.sin(p.angle) * p.dist;
+
+            ctx.fillStyle = `rgba(180, 180, 180, ${p.alpha})`;
+            ctx.beginPath();
+            ctx.arc(x, y, p.size/2, 0, Math.PI*2);
+            ctx.fill();
+        });
+        requestAnimationFrame(animateSand);
+    }
+
+    window.addEventListener('resize', initSand);
+    initSand();
+    animateSand();
+</script>
+</body>
+</html>
