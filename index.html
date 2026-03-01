@@ -7,6 +7,7 @@
     <style>
         :root { 
             --sand-light: #f4f1ea; 
+            --sand-dust: rgba(180, 180, 180, 0.4); 
             --stone-black: #111;    
             --ui-pale: rgba(0, 0, 0, 0.08); 
         }
@@ -22,24 +23,28 @@
             overflow: hidden; 
         }
 
-        #sand-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; }
+        #sand-canvas { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; 
+        }
 
         .app { 
             position: relative; z-index: 10; height: 100%; 
             display: flex; flex-direction: column; align-items: center; justify-content: center; 
             padding: 20px; 
-            background: radial-gradient(circle at center, transparent 0%, rgba(244,241,234,0.3) 100%);
+            background: radial-gradient(circle at center, transparent 0%, rgba(244,241,234,0.4) 100%);
         }
         
-        h1 { font-size: 1.8rem; letter-spacing: 15px; margin: 0; font-weight: 100; color: #000; text-indent: 15px; }
-        .sub-title { font-size: 0.65rem; color: #aaa; margin: 10px 0 20px 0; letter-spacing: 8px; font-weight: 300; }
+        h1 { 
+            font-size: 1.8rem; letter-spacing: 15px; margin: 0; 
+            font-weight: 100; color: #000; text-indent: 15px;
+        }
+        
+        .sub-title { 
+            font-size: 0.65rem; color: #aaa; margin: 10px 0 40px 0; 
+            letter-spacing: 8px; font-weight: 300; 
+        }
 
-        .geomancy-figure { 
-            display: flex; flex-direction: column; gap: 24px; 
-            margin: 20px 0; align-items: center; width: 120px; 
-            min-height: 160px; justify-content: center;
-        }
-        
+        .geomancy-figure { display: flex; flex-direction: column; gap: 24px; margin-bottom: 40px; align-items: center; width: 120px; position: relative;}
         .dot-row { position: relative; width: 100%; height: 18px; display: flex; justify-content: center; align-items: center; }
         
         .dot { 
@@ -47,8 +52,8 @@
             background: var(--stone-black); 
             border-radius: 50%; 
             opacity: 0;
-            box-shadow: 1px 2px 8px rgba(0,0,0,0.2); 
-            transition: all 1s cubic-bezier(0.2, 1, 0.3, 1);
+            box-shadow: 1px 2px 8px rgba(0,0,0,0.15); 
+            transition: all 0.6s cubic-bezier(0.2, 1, 0.3, 1);
             transform: scale(0.4); 
         }
 
@@ -58,52 +63,83 @@
         .dot.pair-left { left: 15%; }
         .dot.pair-right { right: 15%; }
 
-        .result-container { min-height: 160px; display: flex; align-items: flex-start; justify-content: center; width: 100%; }
-        .result-panel { text-align: center; opacity: 0; transition: 1.8s ease; max-width: 320px; }
-        .result-panel.show { opacity: 1; }
+        .result-panel { 
+            text-align: center; opacity: 0; transform: translateY(15px); 
+            transition: 0.8s ease; 
+            max-width: 320px; 
+            margin-bottom: 20px;
+        }
+        .result-panel.show { opacity: 1; transform: translateY(0); }
         
+        .res-header { margin-bottom: 12px; }
         .figure-name { font-size: 1.5rem; color: #000; font-weight: 300; letter-spacing: 5px; }
         .figure-tag { font-size: 0.75rem; color: #aaa; margin-left: 8px; vertical-align: middle;}
-        .figure-main { font-size: 0.95rem; color: #333; margin-bottom: 10px; font-weight: 400; letter-spacing: 2px; padding-top: 15px; border-top: 1px solid var(--ui-pale); }
+        
+        .figure-main { 
+            font-size: 0.95rem; color: #333; margin-bottom: 10px; 
+            font-weight: 400; letter-spacing: 2px;
+            padding-top: 15px; border-top: 1px solid var(--ui-pale);
+        }
         .figure-meaning { font-size: 0.8rem; line-height: 1.8; color: #888; }
 
-        .instruction { font-size: 0.7rem; color: #999; letter-spacing: 6px; margin-bottom: 12px; font-weight: 300; }
-        .btn-draw { 
-            background: rgba(255,255,255,0.7); border: 1px solid var(--ui-pale); 
-            padding: 12px 40px; border-radius: 28px; font-size: 0.85rem; cursor: pointer; 
-            backdrop-filter: blur(8px); box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            transition: 0.3s;
+        .instruction {
+            font-size: 0.7rem; color: #999; letter-spacing: 6px; 
+            margin-bottom: 12px; font-weight: 300;
+            text-indent: 6px;
         }
-        .btn-draw:active { transform: scale(0.96); background: rgba(255,255,255,0.9); }
 
-        .footer { position: fixed; bottom: 25px; width: 100%; text-align: center; font-size: 0.6rem; color: #bbb; letter-spacing: 1.5px; }
+        .btn-draw { 
+            background: rgba(255,255,255,0.6);
+            border: 1px solid var(--ui-pale); color: #444; 
+            padding: 10px 36px; 
+            border-radius: 24px; 
+            font-size: 0.85rem; cursor: pointer; 
+            transition: 0.4s; letter-spacing: 4px;
+            text-indent: 4px;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+        }
+        .btn-draw:active { opacity: 0.6; transform: scale(0.96); }
+
+        .footer { 
+            position: fixed; bottom: 25px; width: 100%; text-align: center; 
+            font-size: 0.65rem; color: #888; 
+            letter-spacing: 1.5px; line-height: 1.8;
+            font-weight: 300;
+        }
     </style>
 </head>
 <body>
     <canvas id="sand-canvas"></canvas>
+    
     <div class="app">
         <h1>地占签语</h1>
         <div class="sub-title">GEOMANCY</div>
-        <div id="figure-area" class="geomancy-figure">
+
+        <div id="figure" class="geomancy-figure">
             <div class="dot-row" id="row-0"><div class="dot single"></div><div class="dot pair-left"></div><div class="dot pair-right"></div></div>
             <div class="dot-row" id="row-1"><div class="dot single"></div><div class="dot pair-left"></div><div class="dot pair-right"></div></div>
             <div class="dot-row" id="row-2"><div class="dot single"></div><div class="dot pair-left"></div><div class="dot pair-right"></div></div>
             <div class="dot-row" id="row-3"><div class="dot single"></div><div class="dot pair-left"></div><div class="dot pair-right"></div></div>
         </div>
-        <div class="result-container">
-            <div id="resPanel" class="result-panel">
-                <div class="res-header">
-                    <span id="resName" class="figure-name"></span>
-                    <span id="resTag" class="figure-tag"></span>
-                </div>
-                <div id="resMain" class="figure-main"></div>
-                <div id="resDesc" class="figure-meaning"></div>
+
+        <div id="resPanel" class="result-panel">
+            <div class="res-header">
+                <span id="resName" class="figure-name"></span>
+                <span id="resTag" class="figure-tag"></span>
             </div>
+            <div id="resMain" class="figure-main"></div>
+            <div id="resDesc" class="figure-meaning"></div>
         </div>
+
         <div class="instruction">默念问题</div>
-        <button id="mainBtn" class="btn-draw" onclick="handleInteraction()">拨沙寻迹</button>
+        <button class="btn-draw" onclick="generate()">拨沙寻迹</button>
     </div>
-    <div class="footer">· 该网站由LUA基于地占术设计 ·<br>· 仅供娱乐 请勿迷信 ·</div>
+
+    <div class="footer">
+        · 该网站由LUA基于地占术设计 ·<br>
+        · 请勿商用 仅供娱乐 请勿迷信 ·
+    </div>
 
 <script>
     const FIGURES = [
@@ -125,126 +161,79 @@
         { name: "群众", tag: "【中】", main: "群羊无首 死水之湖", desc: "无奈又迷茫的状态，就像难以流动的湖水", dots: [2,2,2,2] }
     ];
 
+    function generate() {
+        const resPanel = document.getElementById('resPanel');
+        resPanel.classList.remove('show');
+        document.querySelectorAll('.dot').forEach(d => d.classList.remove('active'));
+
+        const result = FIGURES[Math.floor(Math.random() * FIGURES.length)];
+
+        setTimeout(() => {
+            result.dots.forEach((count, i) => {
+                const row = document.getElementById(`row-${i}`);
+                if (count === 1) {
+                    row.querySelector('.single').classList.add('active');
+                } else {
+                    row.querySelector('.pair-left').classList.add('active');
+                    row.querySelector('.pair-right').classList.add('active');
+                }
+            });
+
+            document.getElementById('resName').innerText = result.name;
+            document.getElementById('resTag').innerText = result.tag;
+            document.getElementById('resMain').innerText = result.main;
+            document.getElementById('resDesc').innerText = result.desc;
+            resPanel.classList.add('show');
+            if(window.navigator.vibrate) window.navigator.vibrate(20);
+        }, 400); 
+    }
+
+    // 流沙背景逻辑
     const canvas = document.getElementById('sand-canvas'), ctx = canvas.getContext('2d');
-    let sands = [], ripples = [];
+    let sands = [];
     
-    function init() {
+    function initSand() {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
         sands = [];
-        for(let i=0; i<80; i++) {
+        const count = 120; // 颗粒密度
+        for(let i=0; i<count; i++) {
             sands.push({
                 x: Math.random() * canvas.width,
                 y: Math.random() * canvas.height,
                 size: Math.random() * 1.5 + 0.5,
-                speedY: Math.random() * 0.15 + 0.1, 
-                drift: Math.random() * 0.2 - 0.1,  
-                opacity: Math.random() * 0.1 + 0.05
+                speedY: Math.random() * 0.8 + 0.2, // 下落速度
+                drift: Math.random() * 0.5 - 0.25,  // 左右偏移
+                opacity: Math.random() * 0.4 + 0.1
             });
         }
     }
 
-    class Ripple {
-        constructor(x, y, scale = 1) {
-            this.x = x; this.y = y;
-            this.radius = 0;
-            // 涟漪基础半径大幅增加至 500
-            this.maxRadius = (500 + Math.random() * 150) * scale; 
-            // 初始速度微调至 0.55，让它扫开更有张力
-            this.speed = 0.55; 
-            // 摩擦力增加至 0.99，让它扫得很远但保持干脆
-            this.friction = 0.99; 
-            this.opacity = 0.22; 
-            this.rings = 2;
-        }
-        draw() {
-            for(let i=0; i<this.rings; i++) {
-                const r = this.radius - (i * 45); // 环距也相应拉大
-                if (r > 0) {
-                    // 透明度随半径非线性递减，干脆溶入背景
-                    const lifeProgress = r / this.maxRadius;
-                    const alpha = this.opacity * Math.pow(1 - lifeProgress, 2.0); // 增加衰减指数，消失更快
-                    if (alpha < 0.005) continue; 
-                    ctx.strokeStyle = `rgba(160, 160, 160, ${alpha})`;
-                    ctx.lineWidth = 1.6;
-                    ctx.beginPath();
-                    ctx.arc(this.x, this.y, r, 0, Math.PI * 2);
-                    ctx.stroke();
-                }
-            }
-        }
-        update() {
-            this.speed *= this.friction; 
-            this.radius += this.speed;
-            // 消失也更加干脆
-            if (this.speed < 0.05) this.opacity -= 0.0025; // 大幅增加淡出速度
-        }
-    }
-
-    function handleInteraction() {
-        if(window.navigator.vibrate) window.navigator.vibrate(10);
-        
-        const area = document.getElementById('figure-area').getBoundingClientRect();
-        // 保持 scale 2.0，基础半径已经变大
-        ripples.push(new Ripple(area.left + area.width/2, area.top + area.height/2, 2.0));
-        
-        runGeomancy();
-    }
-
-    function runGeomancy() {
-        const resPanel = document.getElementById('resPanel');
-        resPanel.classList.remove('show');
-        
-        document.querySelectorAll('.dot').forEach(d => d.classList.remove('active'));
-        
-        const result = FIGURES[Math.floor(Math.random() * FIGURES.length)];
-        
-        // 卦象浮现节奏同步放缓
-        setTimeout(() => {
-            result.dots.forEach((count, i) => {
-                setTimeout(() => {
-                    const row = document.getElementById(`row-${i}`);
-                    if (count === 1) row.querySelector('.single').classList.add('active');
-                    else {
-                        row.querySelector('.pair-left').classList.add('active');
-                        row.querySelector('.pair-right').classList.add('active');
-                    }
-                }, i * 220); // 间隔微调至 220ms
-            });
-            
-            setTimeout(() => {
-                document.getElementById('resName').innerText = result.name;
-                document.getElementById('resTag').innerText = result.tag;
-                document.getElementById('resMain').innerText = result.main;
-                document.getElementById('resDesc').innerText = result.desc;
-                resPanel.classList.add('show');
-            }, 1400); // 含义淡入等待更久
-        }, 200);
-    }
-
-    function animate() {
+    function animateSand() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
-        // 过滤透明或停止的涟漪
-        ripples = ripples.filter(r => r.opacity > 0.005);
-        
-        ripples.forEach(r => {
-            r.update();
-            r.draw();
-        });
-
         sands.forEach(s => {
+            // 垂直流动
             s.y += s.speedY;
-            s.x += Math.sin(s.y * 0.01) * s.drift; 
-            if (s.y > canvas.height) s.y = -10;
-            ctx.fillStyle = `rgba(160, 160, 160, ${s.opacity})`;
-            ctx.beginPath(); ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2); ctx.fill();
+            s.x += Math.sin(s.y * 0.01) * s.drift; // 随波逐流的摆动感
+
+            // 越界重置到顶部
+            if (s.y > canvas.height) {
+                s.y = -10;
+                s.x = Math.random() * canvas.width;
+            }
+
+            ctx.fillStyle = `rgba(180, 180, 180, ${s.opacity})`;
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+            ctx.fill();
         });
-        requestAnimationFrame(animate);
+        requestAnimationFrame(animateSand);
     }
 
-    window.addEventListener('resize', init);
-    init(); animate();
+    window.addEventListener('resize', initSand);
+    initSand();
+    animateSand();
 </script>
 </body>
 </html>
